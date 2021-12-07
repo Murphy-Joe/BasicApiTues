@@ -1,0 +1,15 @@
+### Get All Agents
+
+GET http://localhost:1337/agents HTTP/1.1
+Accept: application/json
+
+
+
+### Get filtered agents
+
+GET http://localhost:1337/agents?state=CA HTTP/1.1
+
+
+
+### GET a specific Agent
+GET http://localhost:1337/agents/13 HTTP/1.1
