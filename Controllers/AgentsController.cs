@@ -21,17 +21,48 @@ public class AgentsController : ControllerBase
         _config = config;
     }
 
+    [HttpPut("/agents/{agentId:int}/email")]
+    public async Task<ActionResult> Put(int agentId, [FromBody] string newEmail)
+    {
+        var agent = await _context.Agents!.Where(a => a.Id == agentId && a.Retired == false).SingleOrDefaultAsync();
+        if (agent is null)
+        {
+            return NotFound();
+        }
+        else
+        {
+            agent.Email = newEmail;
+            await _context.SaveChangesAsync();
+            return Accepted();
+        }
+    }
+
+    [HttpDelete("/agents/{agentId:int}")]
+    public async Task<ActionResult> RetireAgent(int agentId)
+    {
+        var agent = await _context.Agents!.SingleOrDefaultAsync(a => a.Id == agentId && a.Retired == false);
+        if (agent != null)
+        {
+            agent.Retired = true;
+            await _context.SaveChangesAsync();
+        }
+        return NoContent();
+    }
+
     [HttpPost("/agents")]
     public async Task<ActionResult<AgentResponseItem>> AddAgent([FromBody] AgentCreateRequest request)
     {
         // Validate it - if bad, send a 400
         if(!ModelState.IsValid) { return BadRequest(); }
         // Add it to the database.
-            // Map an Agent from our AgentCreateRequest
-            // Save the changes.
+        // Map an Agent from our AgentCreateRequest
+        var agent = _mapper.Map<Agent>(request);
+        // Save the changes.
+        _context.Agents!.Add(agent);
+        await _context.SaveChangesAsync();
         // Return a 201, with a Location header with url, and a copy of the thing they would get if they did a
         //   GET request to that location header.
-        return Ok(request);
+        return CreatedAtRoute("agents#findagent", new {agentId = agent.Id}, agent);
     }
 
     [HttpGet("/agents")]
@@ -58,7 +89,7 @@ public class AgentsController : ControllerBase
 
     }
 
-    [HttpGet("/agents/{agentId:int}")]
+    [HttpGet("/agents/{agentId:int}", Name="agents#findagent")]
     public async Task<ActionResult<AgentResponseItem>> FindAgent(int agentId)
     {
 
